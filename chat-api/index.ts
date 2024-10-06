@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import config from './config';
-import * as mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import usersRouter from './routes/users';
 import chatRouter from './routes/chat';
 import expressWs from 'express-ws';
