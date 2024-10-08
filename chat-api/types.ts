@@ -18,3 +18,8 @@ export interface IncomingMessage {
   type: string;
   payload: string;
 }
+
+export interface OnlineUser {
+  token: string;
+  displayName: string;
+}

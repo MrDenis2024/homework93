@@ -17,7 +17,7 @@ const UserMenu: React.FC<Props> = ({user}) => {
   return (
     <div className="dropdown">
       <button className="dropdown-toggle btn btn-success" data-bs-toggle="dropdown">
-        Hello, {user.displayName}
+        Welcome, {user.displayName}
       </button>
       <ul className="dropdown-menu">
         <li>

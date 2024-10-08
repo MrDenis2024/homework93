@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 import usersRouter from './routes/users';
 import expressWs from 'express-ws';
 import {WebSocket} from 'ws';
-import {IncomingMessage} from './types';
+import {IncomingMessage, OnlineUser} from './types';
 import User from './models/User';
 import Message from './models/Message';
 
@@ -20,6 +20,7 @@ app.use('/users', usersRouter);
 const chatRouter = express.Router();
 
 const connectedClients: WebSocket[] = [];
+const onlineUsers: OnlineUser[] = [];
 
 chatRouter.ws('/chat',  (ws, req) => {
   let token: string | null = null;
@@ -37,10 +38,12 @@ chatRouter.ws('/chat',  (ws, req) => {
         }
 
         connectedClients.push(ws);
-        const messages = await Message.find().sort({datetime: -1}).limit(30).populate('user', 'displayName');
+        onlineUsers.push({token: user.token, displayName: user.displayName});
+
+        const messages = await Message.find().sort({datetime: 1}).limit(30).populate('user', 'displayName');
         ws.send(JSON.stringify({type: 'MESSAGES', payload: messages}));
         connectedClients.forEach((clientsWs) => {
-          clientsWs.send(JSON.stringify({type: 'USERS', payload: user.username}));
+          clientsWs.send(JSON.stringify({type: 'USERS', payload: onlineUsers}));
         });
       }
 
@@ -65,11 +68,25 @@ chatRouter.ws('/chat',  (ws, req) => {
           clientWS.send(JSON.stringify({
             type: 'NEW_MESSAGE',
             payload: {
-              displayName: user.displayName,
+              user: {
+                _id: user._id,
+                displayName: user.displayName,
+              },
               text: decodedMessage.payload,
               datetime,
             },
           }));
+        });
+      }
+
+      if(decodedMessage.type === 'LOGOUT') {
+        const userIndex = onlineUsers.findIndex(onlineUser => onlineUser.token === token);
+        onlineUsers.splice(userIndex, 1);
+        const index = connectedClients.indexOf(ws);
+        connectedClients.splice(index, 1);
+
+        connectedClients.forEach((clientsWs) => {
+          clientsWs.send(JSON.stringify({type: 'USERS', payload: onlineUsers}));
         });
       }
     } catch (error) {
@@ -77,19 +94,14 @@ chatRouter.ws('/chat',  (ws, req) => {
     }
   });
 
-  ws.on('close', async () => {
+  ws.on('close', () => {
+    const userIndex = onlineUsers.findIndex(onlineUser => onlineUser.token === token);
+    onlineUsers.splice(userIndex, 1);
     const index = connectedClients.indexOf(ws);
     connectedClients.splice(index, 1);
-    const user = await User.findOne({token});
-
-    if(!user) {
-      ws.send(JSON.stringify({type: 'ERROR', payload: 'Wrong token'}));
-      ws.close();
-      return;
-    }
 
     connectedClients.forEach((clientsWs) => {
-      clientsWs.send(JSON.stringify({type: 'DISCONNECTED', payload: user.username}));
+      clientsWs.send(JSON.stringify({type: 'USERS', payload: onlineUsers}));
     });
   });
 });

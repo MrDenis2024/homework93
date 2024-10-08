@@ -32,3 +32,18 @@ export interface ValidationError {
 export interface GlobalError {
   error: string;
 }
+
+export interface ChatMessage {
+  _id?: string;
+  user: {
+    _id: string;
+    displayName: string;
+  };
+  text: string;
+  datetime: string;
+}
+
+export interface OnlineUser {
+  token: string;
+  displayName: string;
+}
