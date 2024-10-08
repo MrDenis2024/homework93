@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {useAppSelector} from '../../app/hooks';
 import {selectUser} from '../../store/usersSlice';
 import {Navigate} from 'react-router-dom';
-import {ChatMessage, IncomingMessage, OnlineUser} from '../../types';
+import {ChatMessage, OnlineUser} from '../../types';
 import dayjs from 'dayjs';
 
 const Chat = () => {
